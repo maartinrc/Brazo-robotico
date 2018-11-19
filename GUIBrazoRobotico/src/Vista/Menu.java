@@ -1,11 +1,15 @@
 package Vista;
 
 import Beans.Brazo;
+import com.panamahitek.ArduinoException;
+import com.panamahitek.PanamaHitek_Arduino;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Hashtable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -13,7 +17,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
-
+import jssc.SerialPortException;
 
 /**
  *
@@ -21,13 +25,13 @@ import javax.swing.JSlider;
  */
 public class Menu extends JFrame {
 
-   
+    PanamaHitek_Arduino ino;
     JPanel panelBox, panelBox2, miniPanel;
     JComboBox comboPos;
     JLabel[] lblSliders;
     JSlider[] sliderCuerpo;
     JButton[] btnOpciones;
-    String[] nombreBtn = {"Guardar", "Cargar"};
+    String[] nombreBtn = {"Guardar", "Cargar", "Abortar"};
     String[] nombreSlider = {"Pinza", "Muñeca", "Codo", "Hombro", "Base"};
 
     public Menu() {
@@ -38,9 +42,14 @@ public class Menu extends JFrame {
     }
 
     public void iniciar() {
-       
+        ino = new PanamaHitek_Arduino();
+        try {
+            ino.arduinoTX("/dev/ttyACM0", 9600);
+        } catch (ArduinoException ex) {
+            Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
+        }
         sliderCuerpo = new JSlider[5];
-        btnOpciones = new JButton[2];
+        btnOpciones = new JButton[nombreBtn.length];
         panelBox = new JPanel();
         panelBox2 = new JPanel();
         miniPanel = new JPanel();
@@ -72,7 +81,7 @@ public class Menu extends JFrame {
         }
         sliderCuerpo[4] = new JSlider(JSlider.HORIZONTAL, 0, 180, 0);
         lblSliders[4] = new JLabel(nombreSlider[4]);
-        sliderCuerpo[4].setMajorTickSpacing(5);
+        sliderCuerpo[4].setMajorTickSpacing(10);
         sliderCuerpo[4].setMinorTickSpacing(1);
         sliderCuerpo[4].setPaintTicks(true);
         sliderCuerpo[4].setPaintLabels(true);
@@ -85,13 +94,15 @@ public class Menu extends JFrame {
         for (int i = 0; i < nombreBtn.length; i++) {
             btnOpciones[i] = new JButton(nombreBtn[i]);
             btnOpciones[i].addActionListener(manejadora);
+
         }
         panelBox2.add(btnOpciones[0]);
         miniPanel.add(comboPos);
         miniPanel.add(btnOpciones[1]);
         panelBox2.add(miniPanel);
+        panelBox2.add(btnOpciones[2]);
         this.add(panelBox, BorderLayout.CENTER);
-        this.add(panelBox2,BorderLayout.EAST);
+        this.add(panelBox2, BorderLayout.EAST);
     }
 
     public void lanzar() {
@@ -105,19 +116,40 @@ public class Menu extends JFrame {
 
     private class Manejadora implements ActionListener {
 
+        int o = 0;
+
         @Override
         public void actionPerformed(ActionEvent e) {
-          if(e.getSource() == btnOpciones[0]){
-              Brazo b = new Brazo();
-              b.setBase(sliderCuerpo[0].getValue());
-              b.setHombro(sliderCuerpo[1].getValue());
-              b.setCodo(sliderCuerpo[2].getValue());
-              b.setMuneca(sliderCuerpo[3].getValue());
-              b.setPinza(sliderCuerpo[4].getValue());
-              b.setDescripcion(descripcion);
-              
-            //  comboPos.add();
-          }
+            if (e.getSource() == btnOpciones[0]) {
+                Brazo b = new Brazo();
+                o++;
+                b.setBase(sliderCuerpo[0].getValue());
+                b.setHombro(sliderCuerpo[1].getValue());
+                b.setCodo(sliderCuerpo[2].getValue());
+                b.setMuneca(sliderCuerpo[3].getValue());
+                b.setPinza(sliderCuerpo[4].getValue());
+                b.setDescripcion("Posicion" + o);
+
+                comboPos.addItem(b);
+            } else if (e.getSource() == btnOpciones[1]) {
+                Brazo l = (Brazo) comboPos.getSelectedItem();
+
+                String data = l.getPinza() + "," + l.getMuneca() + "," + l.getCodo() + "," + l.getHombro() + "," + l.getBase();
+                try {
+                    ino.sendData(data);
+                } catch (ArduinoException | SerialPortException ex) {
+                    Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+                System.out.println(l.getPinza() + "," + l.getMuneca() + "," + l.getCodo() + "," + l.getHombro() + "," + l.getBase());
+            } else if (e.getSource() == btnOpciones[2]) {//enviar * para iniciar la secuencia de movimientos
+                   try{
+                       ino.sendData("*");
+                   }catch(ArduinoException | SerialPortException ex) {
+                    Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+
         }
 
     }
