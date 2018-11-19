@@ -1,5 +1,6 @@
 package Vista;
 
+import Beans.Brazo;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -106,7 +107,17 @@ public class Menu extends JFrame {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+          if(e.getSource() == btnOpciones[0]){
+              Brazo b = new Brazo();
+              b.setBase(sliderCuerpo[0].getValue());
+              b.setHombro(sliderCuerpo[1].getValue());
+              b.setCodo(sliderCuerpo[2].getValue());
+              b.setMuneca(sliderCuerpo[3].getValue());
+              b.setPinza(sliderCuerpo[4].getValue());
+              b.setDescripcion(descripcion);
+              
+            //  comboPos.add();
+          }
         }
 
     }
