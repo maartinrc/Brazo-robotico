@@ -37,7 +37,7 @@ public class Menu extends JFrame {
     JLabel[] lblSliders;
     JSlider[] sliderCuerpo;
     JButton[] btnOpciones;
-    String[] nombreBtn = {"Guardar", "Cargar", "Abortar"};
+    String[] nombreBtn = {"Guardar", "Cargar", "Abortar","TOMA"};
     String[] nombreSlider = {"Pinza", "Muñeca", "Codo", "Hombro", "Base"};
     String [] valorBrazo ={"","","","",""};
 
@@ -103,6 +103,7 @@ public class Menu extends JFrame {
         miniPanel.add(btnOpciones[1]);
         panelBox2.add(miniPanel);
         panelBox2.add(btnOpciones[2]);
+        panelBox2.add(btnOpciones[3]);
         this.add(panelBox, BorderLayout.CENTER);
         this.add(panelBox2, BorderLayout.EAST);
     }
@@ -111,7 +112,7 @@ public class Menu extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setSize(1200, 325);
         this.setLocationRelativeTo(null);
-        this.setResizable(false);
+        this.setResizable(true);
         this.setVisible(true);
 
     }
@@ -149,6 +150,12 @@ public class Menu extends JFrame {
             } else if (e.getSource() == btnOpciones[2]) {//enviar * para iniciar la secuencia de movimientos
                    try{
                        ino.sendData("666");
+                   }catch(ArduinoException | SerialPortException ex) {
+                    Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }else if (e.getSource() == btnOpciones[3]){
+                try{
+                       ino.sendData("111");
                    }catch(ArduinoException | SerialPortException ex) {
                     Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
                 }
