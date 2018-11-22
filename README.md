@@ -1,3 +1,16 @@
+Brazo robótico
+=============================================
+# Tecnológico Nacional de México
+
+## Instituto Tecnológico de León
+
+### Carrera:
+#### Ingeniería en Sistemas computacionales
+
+### Alumnos:
+
+#### Ramírez Becerra Juan Silvestre
+#### Alejandra Malacara Ávila
 #### José Martín Ruíz Coss
 
 ### Materia:
