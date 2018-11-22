@@ -7,9 +7,12 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.EventListener;
 import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -17,7 +20,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.event.ChangeEvent;
 import jssc.SerialPortException;
+import javax.swing.event.ChangeEvent;
+//import javax.swing.event.ChangeListener
 
 /**
  *
@@ -33,6 +39,7 @@ public class Menu extends JFrame {
     JButton[] btnOpciones;
     String[] nombreBtn = {"Guardar", "Cargar", "Abortar"};
     String[] nombreSlider = {"Pinza", "Muñeca", "Codo", "Hombro", "Base"};
+    String [] valorBrazo ={"","","","",""};
 
     public Menu() {
         iniciar();
@@ -41,7 +48,7 @@ public class Menu extends JFrame {
 
     }
 
-    public void iniciar() {
+    public void iniciar() {        
         ino = new PanamaHitek_Arduino();
         try {
             ino.arduinoTX("/dev/ttyACM0", 9600);
@@ -59,33 +66,28 @@ public class Menu extends JFrame {
 
     public void construir() {
         Manejadora manejadora = new Manejadora();
-
+       
+       
         this.setLayout(new BorderLayout());
         panelBox.setLayout(new BoxLayout(panelBox, BoxLayout.Y_AXIS));
 
-        Hashtable<Integer, JLabel> labels = new Hashtable<>();
-        labels.put(0, new JLabel("Min - 0"));
-        labels.put(90, new JLabel("90"));
-        labels.put(180, new JLabel("Max - 180"));
 
         for (int i = 0; i < sliderCuerpo.length - 1; i++) {
             sliderCuerpo[i] = new JSlider(JSlider.HORIZONTAL, 0, 180, 0);//Posicion,min,max,inicio
             lblSliders[i] = new JLabel(nombreSlider[i]);
-            sliderCuerpo[i].setMajorTickSpacing(5);
+            sliderCuerpo[i].setMajorTickSpacing(10);
             sliderCuerpo[i].setMinorTickSpacing(1);
-            sliderCuerpo[i].setPaintTicks(true);
             sliderCuerpo[i].setPaintLabels(true);
-            sliderCuerpo[i].setLabelTable(labels);
+            sliderCuerpo[i].setPaintTicks(true);
             panelBox.add(lblSliders[i]);
             panelBox.add(sliderCuerpo[i]);
         }
-        sliderCuerpo[4] = new JSlider(JSlider.HORIZONTAL, 0, 180, 0);
+        sliderCuerpo[4] = new JSlider(JSlider.HORIZONTAL, 0, 360, 0);
         lblSliders[4] = new JLabel(nombreSlider[4]);
         sliderCuerpo[4].setMajorTickSpacing(10);
         sliderCuerpo[4].setMinorTickSpacing(1);
         sliderCuerpo[4].setPaintTicks(true);
         sliderCuerpo[4].setPaintLabels(true);
-        sliderCuerpo[4].setLabelTable(labels);
         panelBox.add(lblSliders[4]);
         panelBox.add(sliderCuerpo[4]);
 
@@ -107,14 +109,16 @@ public class Menu extends JFrame {
 
     public void lanzar() {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(650, 425);
+        this.setSize(1200, 325);
         this.setLocationRelativeTo(null);
-        //   this.setResizable(false);
+        this.setResizable(false);
         this.setVisible(true);
 
     }
 
-    private class Manejadora implements ActionListener {
+   
+
+    private class Manejadora implements EventListener, ActionListener {
 
         int o = 0;
 
@@ -123,11 +127,11 @@ public class Menu extends JFrame {
             if (e.getSource() == btnOpciones[0]) {
                 Brazo b = new Brazo();
                 o++;
-                b.setBase(sliderCuerpo[0].getValue());
-                b.setHombro(sliderCuerpo[1].getValue());
+                b.setBase(sliderCuerpo[4].getValue());
+                b.setHombro(sliderCuerpo[3].getValue());
                 b.setCodo(sliderCuerpo[2].getValue());
-                b.setMuneca(sliderCuerpo[3].getValue());
-                b.setPinza(sliderCuerpo[4].getValue());
+                b.setMuneca(sliderCuerpo[1].getValue());
+                b.setPinza(sliderCuerpo[0].getValue());
                 b.setDescripcion("Posicion" + o);
 
                 comboPos.addItem(b);
@@ -144,14 +148,21 @@ public class Menu extends JFrame {
                 System.out.println(l.getPinza() + "," + l.getMuneca() + "," + l.getCodo() + "," + l.getHombro() + "," + l.getBase());
             } else if (e.getSource() == btnOpciones[2]) {//enviar * para iniciar la secuencia de movimientos
                    try{
-                       ino.sendData("*");
+                       ino.sendData("666");
                    }catch(ArduinoException | SerialPortException ex) {
                     Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
 
         }
+        
+        void stateChanged(ChangeEvent e){
+            
+        }
 
-    }
+    } 
+    
+    
+
 
 }
