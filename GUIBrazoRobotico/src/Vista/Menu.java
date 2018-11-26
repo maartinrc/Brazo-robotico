@@ -7,6 +7,7 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.Hashtable;
 import java.util.logging.Level;
@@ -18,6 +19,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
@@ -32,14 +34,16 @@ import javax.swing.event.ChangeEvent;
 public class Menu extends JFrame {
 
     PanamaHitek_Arduino ino;
-    JPanel panelBox, panelBox2, miniPanel;
-    JComboBox comboPos;
+    JPanel panelBox, panelBox2;
+    JPanel[] miniPaneles;
+    JComboBox comboPos, comboRutina;
     JLabel[] lblSliders;
     JSlider[] sliderCuerpo;
     JButton[] btnOpciones;
-    String[] nombreBtn = {"Guardar", "Cargar", "Abortar","TOMA"};
+    String[] nombreBtn = {"Guardar", "Usar", "Abortar", "TOMA", "Crear rutina", "Agregar", "Cargar rutina",};
     String[] nombreSlider = {"Pinza", "Muñeca", "Codo", "Hombro", "Base"};
-    String [] valorBrazo ={"","","","",""};
+    String[] valorBrazo = {"", "", "", "", ""};
+    String rutina= "222,";
 
     public Menu() {
         iniciar();
@@ -48,7 +52,7 @@ public class Menu extends JFrame {
 
     }
 
-    public void iniciar() {        
+    public void iniciar() {
         ino = new PanamaHitek_Arduino();
         try {
             ino.arduinoTX("/dev/ttyACM0", 9600);
@@ -59,18 +63,18 @@ public class Menu extends JFrame {
         btnOpciones = new JButton[nombreBtn.length];
         panelBox = new JPanel();
         panelBox2 = new JPanel();
-        miniPanel = new JPanel();
+        miniPaneles = new JPanel[4];
         lblSliders = new JLabel[nombreSlider.length];
         comboPos = new JComboBox();
+        comboRutina = new JComboBox();
+        
     }
 
     public void construir() {
         Manejadora manejadora = new Manejadora();
-       
-       
+
         this.setLayout(new BorderLayout());
         panelBox.setLayout(new BoxLayout(panelBox, BoxLayout.Y_AXIS));
-
 
         for (int i = 0; i < sliderCuerpo.length - 1; i++) {
             sliderCuerpo[i] = new JSlider(JSlider.HORIZONTAL, 0, 180, 0);//Posicion,min,max,inicio
@@ -92,18 +96,38 @@ public class Menu extends JFrame {
         panelBox.add(sliderCuerpo[4]);
 
         panelBox2.setLayout(new BoxLayout(panelBox2, BoxLayout.Y_AXIS));
-        miniPanel.setLayout(new FlowLayout());
+        for (int i = 0; i < miniPaneles.length; i++) {
+            miniPaneles[i] = new JPanel();
+            miniPaneles[i].setLayout(new FlowLayout());
+
+        }
+
         for (int i = 0; i < nombreBtn.length; i++) {
             btnOpciones[i] = new JButton(nombreBtn[i]);
             btnOpciones[i].addActionListener(manejadora);
+            btnOpciones[i].setEnabled(false);
 
         }
+
+        comboPos.setEnabled(false);
+        comboRutina.setEnabled(false);
+        btnOpciones[0].setEnabled(true);
+        btnOpciones[3].setEnabled(true);
+
         panelBox2.add(btnOpciones[0]);
-        miniPanel.add(comboPos);
-        miniPanel.add(btnOpciones[1]);
-        panelBox2.add(miniPanel);
+        miniPaneles[0].add(comboPos);
+        miniPaneles[0].add(btnOpciones[1]);
+        miniPaneles[1].add(btnOpciones[4]);
+        miniPaneles[2].add(comboRutina);
+        miniPaneles[2].add(btnOpciones[5]);
+        miniPaneles[3].add(btnOpciones[6]);
+        panelBox2.add(miniPaneles[0]);
+        panelBox2.add(miniPaneles[1]);
+        panelBox2.add(miniPaneles[2]);
+        panelBox2.add(miniPaneles[3]);
         panelBox2.add(btnOpciones[2]);
         panelBox2.add(btnOpciones[3]);
+
         this.add(panelBox, BorderLayout.CENTER);
         this.add(panelBox2, BorderLayout.EAST);
     }
@@ -117,15 +141,19 @@ public class Menu extends JFrame {
 
     }
 
-   
+    private class Manejadora implements  ActionListener {
 
-    private class Manejadora implements EventListener, ActionListener {
-
-        int o = 0;
+        int o = 0; //contador de posiciones
+        int c = 0; // contador de rutinas
 
         @Override
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == btnOpciones[0]) {
+                comboPos.setEnabled(true);
+                btnOpciones[1].setEnabled(true);
+                btnOpciones[2].setEnabled(true);
+                btnOpciones[4].setEnabled(true);
+
                 Brazo b = new Brazo();
                 o++;
                 b.setBase(sliderCuerpo[4].getValue());
@@ -147,29 +175,64 @@ public class Menu extends JFrame {
                 }
 
                 System.out.println(l.getPinza() + "," + l.getMuneca() + "," + l.getCodo() + "," + l.getHombro() + "," + l.getBase());
-            } else if (e.getSource() == btnOpciones[2]) {//enviar * para iniciar la secuencia de movimientos
-                   try{
-                       ino.sendData("666");
-                   }catch(ArduinoException | SerialPortException ex) {
+            } else if (e.getSource() == btnOpciones[4]) {   //btn Crear rutina           
+                comboRutina.setEnabled(true);
+                btnOpciones[5].setEnabled(true);
+              
+                rutina = "222,"; //regresamos al valor necesario
+                
+              
+                  Brazo b = (Brazo) comboPos.getSelectedItem();
+               
+                  rutina += String.valueOf(b.getHombro()) + "," + String.valueOf(b.getBase()) + "," + String.valueOf(b.getCodo())+","+String.valueOf(b.getMuneca())
+                          +","+String.valueOf(b.getPinza());
+                
+                comboRutina.addItem(rutina);
+               
+                
+
+            } else if(e.getSource() == btnOpciones[5]){ // btn agregar
+             btnOpciones[6].setEnabled(true);
+             
+
+             Brazo b = (Brazo) comboPos.getSelectedItem();
+               
+                  rutina += ","+String.valueOf(b.getHombro()) + "," + String.valueOf(b.getBase()) + "," + String.valueOf(b.getCodo())+","+String.valueOf(b.getMuneca())
+                          +","+String.valueOf(b.getPinza());
+             
+             comboRutina.removeItemAt(comboRutina.getSelectedIndex());
+             comboRutina.addItem(rutina);
+            
+            }else if(e.getSource() == btnOpciones[6]){
+                String datosR = (String) comboRutina.getItemAt(comboRutina.getSelectedIndex());
+                try {
+                    ino.sendData(datosR);
+                } catch (ArduinoException | SerialPortException ex) {
                     Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            }else if (e.getSource() == btnOpciones[3]){
-                try{
-                       ino.sendData("111");
-                   }catch(ArduinoException | SerialPortException ex) {
+                
+                JOptionPane.showMessageDialog(null, "Se está ejecutnado la siguiente rutina: " + datosR, "Rutina en ejecución", JOptionPane.WARNING_MESSAGE);
+            }else if (e.getSource() == btnOpciones[2]) {//enviar * para iniciar la secuencia de movimientos
+                try {
+                    ino.sendData("666");
+                } catch (ArduinoException | SerialPortException ex) {
+                    Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else if (e.getSource() == btnOpciones[3]) {
+                try {
+                    ino.sendData("111");
+                } catch (ArduinoException | SerialPortException ex) {
                     Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
 
         }
+    }
         
-        void stateChanged(ChangeEvent e){
-            
-        }
+        
 
-    } 
+        
     
     
-
-
+  
 }
