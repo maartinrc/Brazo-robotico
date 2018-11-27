@@ -1,6 +1,7 @@
 package Vista;
 
 import Beans.Brazo;
+import Beans.Rutina;
 import com.panamahitek.ArduinoException;
 import com.panamahitek.PanamaHitek_Arduino;
 import java.awt.BorderLayout;
@@ -43,7 +44,7 @@ public class Menu extends JFrame {
     String[] nombreBtn = {"Guardar", "Usar", "Abortar", "TOMA", "Crear rutina", "Agregar", "Cargar rutina",};
     String[] nombreSlider = {"Pinza", "Muñeca", "Codo", "Hombro", "Base"};
     String[] valorBrazo = {"", "", "", "", ""};
-    String rutina= "222,";
+    String rutina = "222,";
 
     public Menu() {
         iniciar();
@@ -55,7 +56,7 @@ public class Menu extends JFrame {
     public void iniciar() {
         ino = new PanamaHitek_Arduino();
         try {
-            ino.arduinoTX("/dev/ttyACM0", 9600);
+            ino.arduinoTX("/dev/ttyACM1", 9600);
         } catch (ArduinoException ex) {
             Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -67,7 +68,7 @@ public class Menu extends JFrame {
         lblSliders = new JLabel[nombreSlider.length];
         comboPos = new JComboBox();
         comboRutina = new JComboBox();
-        
+
     }
 
     public void construir() {
@@ -141,7 +142,7 @@ public class Menu extends JFrame {
 
     }
 
-    private class Manejadora implements  ActionListener {
+    private class Manejadora implements ActionListener {
 
         int o = 0; //contador de posiciones
         int c = 0; // contador de rutinas
@@ -178,41 +179,51 @@ public class Menu extends JFrame {
             } else if (e.getSource() == btnOpciones[4]) {   //btn Crear rutina           
                 comboRutina.setEnabled(true);
                 btnOpciones[5].setEnabled(true);
-              
-                rutina = "222,"; //regresamos al valor necesario
-                
-              
-                  Brazo b = (Brazo) comboPos.getSelectedItem();
-               
-                  rutina += String.valueOf(b.getHombro()) + "," + String.valueOf(b.getBase()) + "," + String.valueOf(b.getCodo())+","+String.valueOf(b.getMuneca())
-                          +","+String.valueOf(b.getPinza());
-                
-                comboRutina.addItem(rutina);
-               
-                
+                Rutina rut = new Rutina();
 
-            } else if(e.getSource() == btnOpciones[5]){ // btn agregar
-             btnOpciones[6].setEnabled(true);
-             
+                //rut.setRutina("222,"); //
 
-             Brazo b = (Brazo) comboPos.getSelectedItem();
-               
-                  rutina += ","+String.valueOf(b.getHombro()) + "," + String.valueOf(b.getBase()) + "," + String.valueOf(b.getCodo())+","+String.valueOf(b.getMuneca())
-                          +","+String.valueOf(b.getPinza());
-             
-             comboRutina.removeItemAt(comboRutina.getSelectedIndex());
-             comboRutina.addItem(rutina);
-            
-            }else if(e.getSource() == btnOpciones[6]){
-                String datosR = (String) comboRutina.getItemAt(comboRutina.getSelectedIndex());
+                Brazo b = (Brazo) comboPos.getSelectedItem();
+
+                c++;
+                rut.setRutina(String.valueOf(b.getHombro()) + ",");
+                rut.setRutina(String.valueOf(b.getBase()) + ",");
+                rut.setRutina(String.valueOf(b.getCodo()) + ",");
+                rut.setRutina(String.valueOf(b.getMuneca()) + ",");
+                rut.setRutina(String.valueOf(b.getPinza()));
+                rut.setDescripcion("Rutina" + c);
+                comboRutina.addItem(rut);
+
+            } else if (e.getSource() == btnOpciones[5]) { // btn agregar
+                btnOpciones[6].setEnabled(true);
+
+                Brazo b = (Brazo) comboPos.getSelectedItem();
+                
+                Rutina rut = (Rutina) comboRutina.getSelectedItem();
+                rut.setRutina(",");
+                
+                rut.setRutina(String.valueOf(b.getHombro()) + ",");
+                rut.setRutina(String.valueOf(b.getBase()) + ",");
+                rut.setRutina(String.valueOf(b.getCodo()) + ",");
+                rut.setRutina(String.valueOf(b.getMuneca()) + ",");
+                rut.setRutina(String.valueOf(b.getPinza()));
+                
+                
+                comboRutina.removeItemAt(comboRutina.getSelectedIndex());
+                comboRutina.addItem(rut);
+
+            } else if (e.getSource() == btnOpciones[6]) {
+                Rutina datosR =  (Rutina) comboRutina.getItemAt(comboRutina.getSelectedIndex());
+                String datosP = datosR.getRutina();
                 try {
-                    ino.sendData(datosR);
+                    ino.sendData(datosP);
+                    System.out.println(datosP);
                 } catch (ArduinoException | SerialPortException ex) {
                     Logger.getLogger(Menu.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                
-                JOptionPane.showMessageDialog(null, "Se está ejecutnado la siguiente rutina: " + datosR, "Rutina en ejecución", JOptionPane.WARNING_MESSAGE);
-            }else if (e.getSource() == btnOpciones[2]) {//enviar * para iniciar la secuencia de movimientos
+
+                JOptionPane.showMessageDialog(null, "Se está ejecutnado la siguiente rutina: " + datosP, "Rutina en ejecución", JOptionPane.WARNING_MESSAGE);
+            } else if (e.getSource() == btnOpciones[2]) {//enviar * para iniciar la secuencia de movimientos
                 try {
                     ino.sendData("666");
                 } catch (ArduinoException | SerialPortException ex) {
@@ -228,11 +239,5 @@ public class Menu extends JFrame {
 
         }
     }
-        
-        
 
-        
-    
-    
-  
 }
