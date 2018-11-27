@@ -9,6 +9,8 @@
   #define interrupcion 2
   #include <EEPROM.h>//se incluye la libreria para el manejo de la memoria eeprom
 
+  int dato=0;
+  
   int direccion = 0;//esta variable actuará como índice al momento de escribir/leer los datos de la eeprom 
   Servo  servos [4];//griper,doll,elbow,shoulder
   int pines []={3,6,9,10};//Arreglo que contiene los pines para los servo motores
@@ -17,6 +19,7 @@
   boolean abortar=false;
   boolean emer=false;
   boolean take=false;
+  boolean registro=false;
   int dato_rx;//variable donde se almacenara el valor del motor a pasos
   int numero_pasos = 0; //numero de pasos dados
   void setup(){ 
@@ -42,12 +45,12 @@
         lcd.print("Esperando instru");
         lcd.setCursor(0,1);
         lcd.print("cciones...");
-      attachInterrupt(digitalPinToInterrupt(interrupcion), interrup,RISING);
-      Serial.begin(9600);
+        cargarEEPROM();
+        attachInterrupt(digitalPinToInterrupt(interrupcion), interrup,RISING);
+        Serial.begin(9600);
    }
  
    void loop(){
-      
         digitalWrite(ledRojo,LOW);
         digitalWrite(ledVerde,HIGH);
         digitalWrite(ledNaranja,LOW);
@@ -59,10 +62,29 @@
               {
                   String caracter = Serial.readStringUntil(',');
                   int data = caracter.toInt();
-                  
+
                   positions[contID]=data;//Almacena valor de pinza 
                   contID++;
-                  
+                 
+                  if(data==222){//identificador para rutina(cadena extensa de posiciones)
+                    registro=true;
+                    contID=0;
+                  }
+                 
+                  if(registro==true){
+                    if(contID==5){
+                    digitalWrite(ledVerde,LOW);
+                    digitalWrite(ledNaranja,HIGH);
+                    digitalWrite(ledRojo,LOW);
+                    lcd.clear();
+                    lcd.setCursor(0,0);
+                    lcd.print("Ejecutandose..");
+                    guardaEEPROM();
+                    doIt();//Metodo de ejecucion de pasos
+                    delay(1000);
+                    }
+                  }
+           
                   if(data==666){//identificador para ejecutar los movimientos cargados
                     abortar=true;
                   }
@@ -72,6 +94,7 @@
                     
                   }
               }
+              registro=false;
         }
         //Si se proporciono el codigo se ejecutaran los pasos cargados
         if(abortar==true){
@@ -81,13 +104,26 @@
           lcd.clear();
           lcd.setCursor(0,0);
           lcd.print("Ejecutandose..");
-          guardaEEPROM(positions);
+          guardaEEPROM();
           doIt();//Metodo de ejecucion de pasos
           
         }
 
         if(take==true){//Metodo precargado para tomar objeto
+          digitalWrite(ledVerde,LOW);
+          digitalWrite(ledNaranja,HIGH);
+          digitalWrite(ledRojo,LOW);
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Ejecutandose..");
           toma();
+          abortar=false;              
+          contID=0;
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Esperando instru");
+          lcd.setCursor(0,1);
+          lcd.print("cciones...");
         }
 
         //Si hay una emergencia se ejecutan movimientos predeterminados
@@ -99,12 +135,28 @@
         digitalWrite(ledVerde,LOW);
         digitalWrite(ledNaranja,LOW);
         emergencia();
+        abortar=false;              
+          contID=0;
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("Esperando instru");
+          lcd.setCursor(0,1);
+          lcd.print("cciones...");
         }
       
    }
 
    void doIt(){
-     dato_rx=positions[4];
+    Serial.print("Posiciones: ");
+    for(int index=0;index<5;index++){
+          Serial.print(positions[index]);
+          Serial.print(", ");
+    }
+    Serial.println();
+        servos[3].write(positions[0]);
+        delay(800);
+        
+     dato_rx=positions[1];
      dato_rx*=1.42222222222;// Ajuste de 512 vueltas a los 360 grados
      while (dato_rx>numero_pasos){   // Girohacia la izquierda en grados
          paso_izq();
@@ -117,13 +169,11 @@
       apagado();         // Apagado del Motor para que no se caliente
     /*++++++++++++++++++++++*/
         // Se ejecutan cada una de las posiciones con su respectivo servo
-        servos[3].write(positions[3]);
-        delay(800);
         servos[2].write(positions[2]);
         delay(800);
-        servos[1].write(positions[1]);
+        servos[1].write(positions[3]);
         delay(800);
-        servos[0].write(positions[0]);
+        servos[0].write(positions[4]);
         delay(800);
    
         abortar=false;              
@@ -133,10 +183,13 @@
         lcd.print("Esperando instru");
         lcd.setCursor(0,1);
         lcd.print("cciones...");
+        delay(1000);
+        
    }
   //Interrupcion
    void interrup(){
     emer=!emer;
+    emergencia();
    }
     //Movimientos definidos de emergencia
    void emergencia(){
@@ -212,7 +265,7 @@
       delay(800);
       servos[0].write(90);
       delay(800);
-    
+      
       servos[3].write(138);
       delay(800);
       servos[2].write(60);
@@ -280,22 +333,24 @@
     }
 
 
-    void guardaEEPROM(int  positio []){ //****BORRAR ESTE COMENTARIO ejecutar el metodo antes pasar los datos a los motores (supongo que en el doIt() )
-  //  for(int i=0; i <= sizeof(positio);i++){ //guardar en la memoria EEPROM las posiciones del brazo robótico
-  //   // EEPROM.put(direccion,positio[i]);
-  //   EEPROM.update(direccion,positio[i]); // a diferencia de put, update() comprueba antes de escribir el valor existente en la memoria, y escribe únicamente si el valor es diferente del almacenado. 
-  //   direccion++;
-  //  }
-  //  direccion=0;//reiniciamos índice
-  //  }
-  //
-  // int *cargarEEPROM(){ 
-  //
-  // direccion = sizeof(positio);
-  //  for(int i = direccion-1 ;i >= 0 ;i--){
-  //    posisitio[i]= EEPROM.get(direccion,int);
-  //    
-  //  }
-  //  return positions;
+    void guardaEEPROM(){ 
+//    for(int i=0; i <= sizeof(positions);i++){ //guardar en la memoria EEPROM las posiciones del brazo robótico
+//     // EEPROM.put(direccion,positions[i]);
+//     EEPROM.update(direccion,positions[i]); // a diferencia de put, update() comprueba antes de escribir el valor existente en la memoria, y escribe únicamente si el valor es diferente del almacenado. 
+//     direccion++;
+//    }
+//    direccion=0;//reiniciamos índice
+    }
+  
+   void cargarEEPROM(){ 
+//  
+//   direccion = sizeof(positions);
+//    for(int i = direccion-1 ;i >= 0 ;i--){
+//       EEPROM.get(direccion,dato);
+//      positions[i]=dato;
+//      Serial.print("dato: ");
+//      Serial.println(dato);    }
+//    
+   
   }
   
