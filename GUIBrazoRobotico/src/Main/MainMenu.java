@@ -14,7 +14,7 @@ import Vista.Menu;
 public class MainMenu {
 
     public static void main(String[] args) {
-       Menu m = new Menu();
+       Menu m = new Menu(); // se ejecuta el constructor para ejecutar la GUI de Brazo robótico
     }
     
 }
